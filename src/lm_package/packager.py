@@ -11,8 +11,9 @@ from pathlib import Path
 from lm_package.validator import validate_manifest, is_cpp_project
 
 EXCLUDE_PATTERNS = {
-    "__pycache__", ".git", ".vscode", ".vs", "build", "dist",
+    "__pycache__", ".git", ".github", ".vscode", ".vs", "build", "dist",
     ".lmext", ".pyc", ".pyo", ".DS_Store", "Thumbs.db",
+    ".gitignore", ".gitattributes",
     "Release", "Debug", "x64", ".sln", ".vcxproj",
 }
 
