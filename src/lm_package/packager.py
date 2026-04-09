@@ -119,8 +119,10 @@ def create_package(
 
                 files.append((full_path, str(rel_path)))
 
-    # For C++ multi-plugin extensions, generate a root plugInfo.json so USD
+    # For C++ multi-plugin extensions, generate resources/plugInfo.json so USD
     # can chain-discover sub-plugins (e.g. lidar/resources/, lidar_nodes/resources/).
+    # The root extensions/plugInfo.json uses {"Includes": ["*/resources/"]} which
+    # finds this file, and it in turn redirects to ../*/resources/ (sibling dirs).
     needs_discovery = (
         build_dir is not None
         and any(Path(arc).match("*/resources/plugInfo.json") for _, arc in files)
@@ -133,7 +135,10 @@ def create_package(
         zf.writestr("manifest.json", manifest_json)
 
         if needs_discovery:
-            zf.writestr("plugInfo.json", '{\n    "Includes": ["*/resources/"]\n}\n')
+            zf.writestr(
+                "resources/plugInfo.json",
+                '{\n    "Includes": [ "../*/resources/" ]\n}\n',
+            )
 
         for abs_path, arc_name in sorted(files, key=lambda x: x[1]):
             zf.write(abs_path, arc_name)
