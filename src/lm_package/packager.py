@@ -119,11 +119,21 @@ def create_package(
 
                 files.append((full_path, str(rel_path)))
 
+    # For C++ multi-plugin extensions, generate a root plugInfo.json so USD
+    # can chain-discover sub-plugins (e.g. lidar/resources/, lidar_nodes/resources/).
+    needs_discovery = (
+        build_dir is not None
+        and any(Path(arc).match("*/resources/plugInfo.json") for _, arc in files)
+    )
+
     # Create ZIP
     with zipfile.ZipFile(output_path, "w", zipfile.ZIP_DEFLATED) as zf:
         # Always write manifest first (from the in-memory dict, which may include abiTag)
         manifest_json = json.dumps(manifest, indent=4, ensure_ascii=False)
         zf.writestr("manifest.json", manifest_json)
+
+        if needs_discovery:
+            zf.writestr("plugInfo.json", '{\n    "Includes": ["*/resources/"]\n}\n')
 
         for abs_path, arc_name in sorted(files, key=lambda x: x[1]):
             zf.write(abs_path, arc_name)
