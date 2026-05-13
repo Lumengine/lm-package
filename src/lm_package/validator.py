@@ -124,8 +124,15 @@ def _validate_pluginfo_exists(
     # Strict mode: validate pluginName matches manifest ID
     ext_id = manifest["id"]
     try:
-        with open(plug_info, "r", encoding="utf-8") as f:
-            plug_data = json.load(f)
+        # USD's `plugInfo.json` convention allows `#`-prefixed comment lines
+        # (usdGenSchema prepends a 3-line auto-generation warning by default).
+        # `json.loads` rejects them — strip first, then parse, so we read
+        # the same plugInfo USD's own loader does.
+        text = plug_info.read_text(encoding="utf-8")
+        text = "\n".join(
+            line for line in text.splitlines() if not line.lstrip().startswith("#")
+        )
+        plug_data = json.loads(text)
         for plugin in plug_data.get("Plugins", []):
             types = plugin.get("Info", {}).get("Types", {})
             for _type_name, type_info in types.items():
