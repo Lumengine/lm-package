@@ -137,10 +137,21 @@ def _validate_pluginfo_exists(
             types = plugin.get("Info", {}).get("Types", {})
             for _type_name, type_info in types.items():
                 pname = type_info.get("pluginName", "")
-                if pname and pname != ext_id:
-                    errors.append(
-                        f"plugInfo.json pluginName '{pname}' does not match "
-                        f"manifest id '{ext_id}'. They must be identical."
-                    )
+                if not pname or pname == ext_id:
+                    continue
+                # LmExtension-based types use `pluginName` as a runtime
+                # identifier the C++ side looks up via
+                # `app->GetExtensionManager().GetExtensionInfo(pname)`.
+                # That name is bound to C++ symbols, not the registry
+                # identifier — it doesn't have to match the manifest id.
+                # Only enforce the match on non-LmExtension types
+                # (traditional USD plugins where the convention does hold).
+                bases = type_info.get("bases", [])
+                if "LmExtension" in bases:
+                    continue
+                errors.append(
+                    f"plugInfo.json pluginName '{pname}' does not match "
+                    f"manifest id '{ext_id}'. They must be identical."
+                )
     except (json.JSONDecodeError, OSError) as e:
         errors.append(f"Failed to read plugInfo.json: {e}")
